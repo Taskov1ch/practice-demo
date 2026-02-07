@@ -1,26 +1,21 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Howl } from 'howler'
 import { AnimatePresence, motion } from 'motion/react'
-import { Render, IdleAnimation } from 'skin3d'
-import {
-	Check,
-	Timer,
-	X,
-} from 'lucide-react'
-
-type Stage = 'preload' | 'enter' | 'menu' | 'matchmaking' | 'found' | 'accepted'
+import BackgroundPano from './components/BackgroundPano'
+import HeaderProfile from './components/HeaderProfile'
+import PreloadEnterOverlay from './components/PreloadEnterOverlay'
+import SkinViewer from './components/SkinViewer'
+import MatchmakingBar from './components/MatchmakingBar'
+import FoundModal from './components/FoundModal'
+import AcceptedModal from './components/AcceptedModal'
+import PlayButton from './components/PlayButton'
+import type { Stage } from './types/stage'
 
 type AudioPack = {
 	bg2?: Howl
 	bg1?: Howl
 	match?: Howl
 	back?: Howl
-}
-
-const formatTime = (seconds: number) => {
-	const mins = Math.floor(seconds / 60)
-	const secs = seconds % 60
-	return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
 }
 
 function App() {
@@ -49,91 +44,8 @@ function App() {
 	const matchTimeoutRef = useRef<number | null>(null)
 	const acceptTimeoutRef = useRef<number | null>(null)
 	const foundModalTimeoutRef = useRef<number | null>(null)
-	const panoRef = useRef<HTMLDivElement | null>(null)
-	const panoTargetRef = useRef({ x: 0, y: 0 })
-	const panoCurrentRef = useRef({ x: 0, y: 0 })
-	const panoRafRef = useRef<number | null>(null)
 	const bg1ActiveRef = useRef(false)
 	const prevShowFoundModalRef = useRef(false)
-	const skinContainerRef = useRef<HTMLDivElement | null>(null)
-	const skinViewerRef = useRef<Render | null>(null)
-	const headTargetRef = useRef({ x: 0, y: 0 })
-	const headCurrentRef = useRef({ x: 0, y: 0 })
-	const headRafRef = useRef<number | null>(null)
-
-	// Initialize skin3d viewer when container mounts
-	useEffect(() => {
-		const container = skinContainerRef.current
-		if (!container || skinViewerRef.current) return
-
-		const viewer = new Render({
-			width: container.clientWidth,
-			height: container.clientHeight,
-			skin: 'https://mc-heads.net/skin/759dc5ab-6144-46a0-a844-ce66d08d3a8a',
-		})
-
-		viewer.autoRotate = false
-		viewer.animation = new IdleAnimation()
-		viewer.controls.enableRotate = false
-		viewer.controls.enableZoom = false
-		viewer.controls.enablePan = false
-		viewer.fov = 40
-		viewer.globalLight.intensity = 1.2
-		viewer.cameraLight.intensity = 0.6
-		viewer.background = null
-
-		// Append the auto-created canvas to the container
-		viewer.canvas.style.width = '100%'
-		viewer.canvas.style.height = '100%'
-		container.appendChild(viewer.canvas)
-
-		skinViewerRef.current = viewer
-
-		// Head follows mouse (MCBE style)
-		const handleMouseMove = (e: MouseEvent) => {
-			const nx = (e.clientX / window.innerWidth) * 2 - 1
-			const ny = (e.clientY / window.innerHeight) * 2 - 1
-			headTargetRef.current = {
-				y: nx * 0.6,   // horizontal → head Y rotation (max ~34°)
-				x: ny * 0.4,   // vertical → head X rotation (max ~23°)
-			}
-		}
-
-		const animateHead = () => {
-			const cur = headCurrentRef.current
-			const tgt = headTargetRef.current
-			const lerp = 0.08
-			cur.x += (tgt.x - cur.x) * lerp
-			cur.y += (tgt.y - cur.y) * lerp
-
-			if (skinViewerRef.current) {
-				skinViewerRef.current.playerObject.skin.head.rotation.x = cur.x
-				skinViewerRef.current.playerObject.skin.head.rotation.y = cur.y
-			}
-			headRafRef.current = requestAnimationFrame(animateHead)
-		}
-		headRafRef.current = requestAnimationFrame(animateHead)
-		window.addEventListener('mousemove', handleMouseMove)
-
-		const handleResize = () => {
-			if (skinViewerRef.current && container) {
-				skinViewerRef.current.width = container.clientWidth
-				skinViewerRef.current.height = container.clientHeight
-			}
-		}
-		window.addEventListener('resize', handleResize)
-
-		return () => {
-			window.removeEventListener('mousemove', handleMouseMove)
-			window.removeEventListener('resize', handleResize)
-			if (headRafRef.current) cancelAnimationFrame(headRafRef.current)
-			if (skinViewerRef.current) {
-				skinViewerRef.current.dispose()
-				skinViewerRef.current = null
-			}
-			container.innerHTML = ''
-		}
-	}, [stage])
 
 	const ensureAudio = () => {
 		if (audioRef.current.bg2) return
@@ -267,45 +179,6 @@ function App() {
 		}
 	}, [stage, audioEnabled, showFoundModal])
 
-	useEffect(() => {
-		const node = panoRef.current
-		if (!node) return
-		const update = () => {
-			panoRafRef.current = null
-			const target = panoTargetRef.current
-			const current = panoCurrentRef.current
-			current.x += (target.x - current.x) * 0.08
-			current.y += (target.y - current.y) * 0.08
-			const moveX = current.x * 10
-			const moveY = current.y * 6
-			node.style.transform = `translate3d(${moveX}px, ${moveY}px, 0) scale(1.03)`
-			if (Math.abs(target.x - current.x) > 0.001 || Math.abs(target.y - current.y) > 0.001) {
-				panoRafRef.current = window.requestAnimationFrame(update)
-			}
-		}
-		const handleMove = (event: MouseEvent) => {
-			const { innerWidth, innerHeight } = window
-			const x = (event.clientX / innerWidth - 0.5) * 2
-			const y = (event.clientY / innerHeight - 0.5) * 2
-			panoTargetRef.current = { x, y }
-			if (!panoRafRef.current) {
-				panoRafRef.current = window.requestAnimationFrame(update)
-			}
-		}
-		const handleLeave = () => {
-			panoTargetRef.current = { x: 0, y: 0 }
-			if (!panoRafRef.current) {
-				panoRafRef.current = window.requestAnimationFrame(update)
-			}
-		}
-		window.addEventListener('mousemove', handleMove)
-		window.addEventListener('mouseleave', handleLeave)
-		return () => {
-			window.removeEventListener('mousemove', handleMove)
-			window.removeEventListener('mouseleave', handleLeave)
-			if (panoRafRef.current) window.cancelAnimationFrame(panoRafRef.current)
-		}
-	}, [])
 
 	useEffect(() => {
 		return () => {
@@ -348,110 +221,18 @@ function App() {
 	return (
 		<div className="relative min-h-screen overflow-hidden text-zinc-100">
 			{/* Video background with parallax */}
-			<div ref={panoRef} className="absolute inset-0 -z-10 transition-transform duration-300 ease-out">
-				<video
-					autoPlay
-					muted
-					loop
-					playsInline
-					className="h-full w-full object-cover"
-					src="/video/bg.mp4"
-				/>
-				<div className="absolute inset-0 bg-black/60" />
-			</div>
+			<BackgroundPano />
 
 			{/* Header: avatar + name + banners */}
-			<header className="fixed bottom-8 left-8 z-10">
-				<div className="inline-flex flex-col">
-					<div className="flex items-stretch">
-						<div className="relative h-20 w-20 shrink-0 border border-emerald-400/60 bg-zinc-950/40 backdrop-blur-sm">
-							<img
-								alt="Аватар"
-								src="https://i1.sndcdn.com/artworks-8V7ykLCHuVcoFfJB-1Mjf6w-t500x500.png"
-								className="h-full w-full object-cover"
-							/>
-						</div>
-						<div className="relative h-20 w-64 overflow-hidden border border-l-0 border-emerald-400/30 bg-zinc-950/40">
-							<img
-								alt="Баннер"
-								src="https://t4.ftcdn.net/jpg/04/04/73/39/360_F_404733910_2mIXr6RbC5G3WZJFjopVsBaR3EOM6Bqy.jpg"
-								className="h-full w-full object-cover"
-							/>
-						</div>
-					</div>
-					<div className="border border-t-0 border-emerald-400/30 bg-zinc-950/80 px-4 py-1.5 backdrop-blur-md">
-						<span className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-100">
-							Taskov1ch
-						</span>
-					</div>
-				</div>
-			</header>
+			<HeaderProfile />
 
 			{/* Preload / Enter overlay */}
-			<AnimatePresence>
-				{(stage === 'preload' || stage === 'enter') && (
-					<motion.div
-						key="preload-overlay"
-						initial={{ opacity: 1 }}
-						animate={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
-						transition={{ duration: 0.6 }}
-						className="fixed inset-0 z-50 flex flex-col justify-end bg-black"
-					>
-						<div className="px-8 pb-8">
-							<AnimatePresence mode="wait">
-								{stage === 'preload' ? (
-									<motion.div
-										key="loading"
-										initial={{ opacity: 1 }}
-										exit={{ opacity: 0 }}
-										transition={{ duration: 0.3 }}
-									>
-										<p className="mb-4 text-xs uppercase tracking-[0.3em] text-zinc-500">
-											<span className="text-zinc-400">Инициализация сети</span>
-											<span className="ml-3 font-mono text-zinc-600">{currentAsset}</span>
-										</p>
-										<div className="flex items-center gap-4">
-											<div className="loader h-12 w-12 shrink-0 overflow-visible" />
-											<div className="h-1 flex-1 bg-zinc-900">
-												<div
-													className="h-full bg-emerald-400/80 transition-all duration-150"
-													style={{ width: `${progress}%` }}
-												/>
-											</div>
-											<span className="w-10 shrink-0 text-right font-mono text-xs text-zinc-500">{progress}%</span>
-										</div>
-									</motion.div>
-								) : (
-									<motion.div
-										key="enter"
-										initial={{ opacity: 0, y: 8 }}
-										animate={{ opacity: 1, y: 0 }}
-										exit={{ opacity: 0 }}
-										transition={{ duration: 0.4 }}
-										className="flex items-end justify-between gap-8"
-									>
-										<div>
-											<h1 className="text-2xl font-semibold uppercase tracking-[0.3em] text-zinc-100">
-												Операция Нексус
-											</h1>
-											<p className="mt-2 text-xs uppercase tracking-[0.3em] text-zinc-500">
-												Система готова // Канал защищён
-											</p>
-										</div>
-										<button
-											onClick={handleEnter}
-											className="shrink-0 border border-emerald-400/70 bg-emerald-500/10 px-10 py-3.5 text-sm uppercase tracking-[0.4em] text-emerald-300 transition hover:bg-emerald-400/20"
-										>
-											Войти
-										</button>
-									</motion.div>
-								)}
-							</AnimatePresence>
-						</div>
-					</motion.div>
-				)}
-			</AnimatePresence>
+			<PreloadEnterOverlay
+				stage={stage}
+				currentAsset={currentAsset}
+				progress={progress}
+				onEnter={handleEnter}
+			/>
 
 			{/* Center content — 3D skin */}
 			<main className="relative z-10 flex min-h-screen items-center justify-center">
@@ -464,143 +245,23 @@ function App() {
 							exit={{ opacity: 0 }}
 							className="flex items-center justify-center"
 						>
-							<div
-								ref={skinContainerRef}
-								className="h-[70vh] w-100"
-							/>
+							<SkinViewer />
 						</motion.div>
 					)}
 				</AnimatePresence>
 			</main>
 
 			{/* Matchmaking top bar */}
-			<AnimatePresence>
-				{(stage === 'matchmaking' || stage === 'found') && (
-					<motion.div
-						initial={{ width: 110, height: 2, opacity: 0, y: -14 }}
-						animate={{ width: '100vw', height: 36, opacity: 1, y: 0 }}
-						exit={{ width: 110, height: 2, opacity: 0, y: -14 }}
-						transition={{ duration: 0.4, ease: 'easeOut' }}
-						className={`fixed left-1/2 top-0 z-30 flex -translate-x-1/2 items-center justify-center border-b backdrop-blur-sm ${stage === 'found'
-							? 'border-emerald-400 bg-emerald-400 text-black'
-							: 'border-emerald-400/40 bg-zinc-950/60 text-zinc-300'
-							}`}
-					>
-						<AnimatePresence mode="wait">
-							{stage === 'found' ? (
-								<motion.div
-									key="found-text"
-									initial={{ opacity: 0 }}
-									animate={{ opacity: 1 }}
-									exit={{ opacity: 0 }}
-									transition={{ duration: 0.3 }}
-									className="text-xs font-semibold uppercase tracking-[0.35em]"
-								>
-									Матч найден
-								</motion.div>
-							) : (
-								<motion.div
-									key="search-text"
-									initial={{ opacity: 0 }}
-									animate={{ opacity: 1 }}
-									exit={{ opacity: 0 }}
-									transition={{ duration: 0.3 }}
-									className="flex items-center gap-6 text-[0.7rem] uppercase tracking-[0.3em]"
-								>
-									<span className="font-mono text-emerald-300">{formatTime(elapsed)}</span>
-									<span>Поиск соперника...</span>
-									<button
-										onClick={handleCancel}
-										className="flex items-center gap-2 border border-emerald-400/40 px-3 py-1 text-emerald-300 transition hover:bg-emerald-400/10"
-									>
-										<X size={12} />
-										Отмена
-									</button>
-								</motion.div>
-							)}
-						</AnimatePresence>
-					</motion.div>
-				)}
-			</AnimatePresence>
+			<MatchmakingBar stage={stage} elapsed={elapsed} onCancel={handleCancel} />
 
 			{/* Match found modal */}
-			<AnimatePresence>
-				{stage === 'found' && showFoundModal && (
-					<motion.div
-						key="found-modal"
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
-						className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-					>
-						<motion.div
-							initial={{ scale: 0.95, opacity: 0 }}
-							animate={{ scale: 1, opacity: 1 }}
-							exit={{ scale: 0.97, opacity: 0 }}
-							className="w-full max-w-md border border-emerald-400/60 bg-zinc-950/90 p-10 text-center backdrop-blur-sm"
-						>
-							<p className="text-[0.65rem] uppercase tracking-[0.4em] text-zinc-500">Матч найден</p>
-							<h3 className="mt-4 text-2xl font-semibold uppercase tracking-[0.3em] text-emerald-300">
-								Подтвердите участие
-							</h3>
-							<div className="mt-6 flex items-center justify-center gap-2.5 text-xs uppercase tracking-[0.3em] text-zinc-400">
-								<Timer size={14} className="text-emerald-400" />
-								<span>Подтвердить за {countdown}с</span>
-							</div>
-							<button
-								onClick={handleAccept}
-								className="mt-8 w-full border border-emerald-400 bg-emerald-500/20 px-8 py-4 text-base uppercase tracking-[0.5em] text-emerald-200 transition hover:bg-emerald-400/30"
-							>
-								Принять
-							</button>
-						</motion.div>
-					</motion.div>
-				)}
-			</AnimatePresence>
+			<FoundModal open={stage === 'found' && showFoundModal} countdown={countdown} onAccept={handleAccept} />
 
 			{/* Accepted modal */}
-			<AnimatePresence>
-				{stage === 'accepted' && (
-					<motion.div
-						key="accepted-modal"
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
-						className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-					>
-						<motion.div
-							initial={{ scale: 0.95, opacity: 0 }}
-							animate={{ scale: 1, opacity: 1 }}
-							exit={{ scale: 0.97, opacity: 0 }}
-							className="w-full max-w-md border border-emerald-400/50 bg-zinc-950/90 p-10 text-center backdrop-blur-sm"
-						>
-							<div className="mx-auto flex h-14 w-14 items-center justify-center border border-emerald-400/60">
-								<Check className="text-emerald-300" size={24} />
-							</div>
-							<h3 className="mt-5 text-xl font-semibold uppercase tracking-[0.3em] text-emerald-300">
-								Участие подтверждено
-							</h3>
-							<p className="mt-2 text-xs uppercase tracking-[0.3em] text-zinc-500">
-								Синхронизация канала...
-							</p>
-						</motion.div>
-					</motion.div>
-				)}
-			</AnimatePresence>
+			<AcceptedModal open={stage === 'accepted'} />
 
 			{/* Play / Cancel button */}
-			{(stage === 'menu' || stage === 'matchmaking' || stage === 'found' || stage === 'accepted') && (
-				<button
-					onClick={handleFindMatch}
-					disabled={stage === 'found' || stage === 'accepted'}
-					className={`fixed bottom-8 right-8 z-20 border px-14 py-7 text-xl uppercase tracking-[0.55em] backdrop-blur-sm transition ${stage === 'matchmaking'
-						? 'border-red-400/80 bg-red-500/10 text-red-300 hover:bg-red-400/20'
-						: 'border-emerald-400/80 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-400/20'
-						} disabled:cursor-not-allowed disabled:border-emerald-400/20 disabled:text-emerald-400/30`}
-				>
-					{stage === 'matchmaking' ? 'Отмена' : 'Играть'}
-				</button>
-			)}
+			<PlayButton stage={stage} onFindMatch={handleFindMatch} />
 		</div>
 	)
 }
