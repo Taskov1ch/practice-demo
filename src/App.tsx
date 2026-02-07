@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { Howl } from 'howler'
 import { AnimatePresence, motion } from 'motion/react'
+import { Render, IdleAnimation } from 'skin3d'
 import {
 	Check,
 	Timer,
@@ -54,6 +55,85 @@ function App() {
 	const panoRafRef = useRef<number | null>(null)
 	const bg1ActiveRef = useRef(false)
 	const prevShowFoundModalRef = useRef(false)
+	const skinContainerRef = useRef<HTMLDivElement | null>(null)
+	const skinViewerRef = useRef<Render | null>(null)
+	const headTargetRef = useRef({ x: 0, y: 0 })
+	const headCurrentRef = useRef({ x: 0, y: 0 })
+	const headRafRef = useRef<number | null>(null)
+
+	// Initialize skin3d viewer when container mounts
+	useEffect(() => {
+		const container = skinContainerRef.current
+		if (!container || skinViewerRef.current) return
+
+		const viewer = new Render({
+			width: container.clientWidth,
+			height: container.clientHeight,
+			skin: 'https://mc-heads.net/skin/759dc5ab-6144-46a0-a844-ce66d08d3a8a',
+		})
+
+		viewer.autoRotate = false
+		viewer.animation = new IdleAnimation()
+		viewer.controls.enableRotate = false
+		viewer.controls.enableZoom = false
+		viewer.controls.enablePan = false
+		viewer.fov = 40
+		viewer.globalLight.intensity = 1.2
+		viewer.cameraLight.intensity = 0.6
+		viewer.background = null
+
+		// Append the auto-created canvas to the container
+		viewer.canvas.style.width = '100%'
+		viewer.canvas.style.height = '100%'
+		container.appendChild(viewer.canvas)
+
+		skinViewerRef.current = viewer
+
+		// Head follows mouse (MCBE style)
+		const handleMouseMove = (e: MouseEvent) => {
+			const nx = (e.clientX / window.innerWidth) * 2 - 1
+			const ny = (e.clientY / window.innerHeight) * 2 - 1
+			headTargetRef.current = {
+				y: nx * 0.6,   // horizontal → head Y rotation (max ~34°)
+				x: ny * 0.4,   // vertical → head X rotation (max ~23°)
+			}
+		}
+
+		const animateHead = () => {
+			const cur = headCurrentRef.current
+			const tgt = headTargetRef.current
+			const lerp = 0.08
+			cur.x += (tgt.x - cur.x) * lerp
+			cur.y += (tgt.y - cur.y) * lerp
+
+			if (skinViewerRef.current) {
+				skinViewerRef.current.playerObject.skin.head.rotation.x = cur.x
+				skinViewerRef.current.playerObject.skin.head.rotation.y = cur.y
+			}
+			headRafRef.current = requestAnimationFrame(animateHead)
+		}
+		headRafRef.current = requestAnimationFrame(animateHead)
+		window.addEventListener('mousemove', handleMouseMove)
+
+		const handleResize = () => {
+			if (skinViewerRef.current && container) {
+				skinViewerRef.current.width = container.clientWidth
+				skinViewerRef.current.height = container.clientHeight
+			}
+		}
+		window.addEventListener('resize', handleResize)
+
+		return () => {
+			window.removeEventListener('mousemove', handleMouseMove)
+			window.removeEventListener('resize', handleResize)
+			if (headRafRef.current) cancelAnimationFrame(headRafRef.current)
+			if (skinViewerRef.current) {
+				skinViewerRef.current.dispose()
+				skinViewerRef.current = null
+			}
+			container.innerHTML = ''
+		}
+	}, [stage])
 
 	const ensureAudio = () => {
 		if (audioRef.current.bg2) return
@@ -373,8 +453,8 @@ function App() {
 				)}
 			</AnimatePresence>
 
-			{/* Center content */}
-			<main className="relative z-10 flex min-h-screen items-center justify-center px-6">
+			{/* Center content — 3D skin */}
+			<main className="relative z-10 flex min-h-screen items-center justify-center">
 				<AnimatePresence mode="wait">
 					{(stage === 'menu' || stage === 'matchmaking' || stage === 'found' || stage === 'accepted') && (
 						<motion.div
@@ -382,9 +462,12 @@ function App() {
 							initial={{ opacity: 0 }}
 							animate={{ opacity: 1 }}
 							exit={{ opacity: 0 }}
-							className="w-full"
+							className="flex items-center justify-center"
 						>
-							<div className="h-[60vh]" />
+							<div
+								ref={skinContainerRef}
+								className="h-[70vh] w-100"
+							/>
 						</motion.div>
 					)}
 				</AnimatePresence>
