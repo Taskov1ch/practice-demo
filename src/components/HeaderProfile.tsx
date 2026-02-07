@@ -5,7 +5,7 @@ const HeaderProfile = () => {
 	const player = getPlayerById(DEFAULT_PLAYER_ID)
 
 	return (
-		<header className="fixed bottom-8 left-8 z-10">
+		<header className="fixed bottom-8 left-8 z-20">
 			<Link
 				to={`/profile/${player.id}`}
 			>
