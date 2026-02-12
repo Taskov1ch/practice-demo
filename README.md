@@ -1,5 +1,16 @@
 # React + TypeScript + Vite
 
+## GitHub Pages (gh-pages)
+
+1. Убедитесь, что репозиторий называется `practice` (или замените `base` в `vite.config.ts` под ваше имя репозитория).
+2. Запустите деплой:
+
+```bash
+npm run deploy
+```
+
+3. В GitHub откройте `Settings -> Pages` и выберите источник `gh-pages` branch.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

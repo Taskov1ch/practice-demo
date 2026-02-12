@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { Timer } from 'lucide-react'
+import KeyboardKey from './KeyboardKey'
 
 type FoundModalProps = {
 	open: boolean
@@ -30,6 +31,10 @@ const FoundModal = ({ open, countdown, onAccept }: FoundModalProps) => (
 					<div className="mt-6 flex items-center justify-center gap-2.5 text-xs uppercase tracking-[0.3em] text-zinc-400">
 						<Timer size={14} className="text-emerald-400" />
 						<span>Подтвердить за {countdown}с</span>
+					</div>
+					<div className="mt-4 flex items-center justify-center gap-2 text-[0.62rem] uppercase tracking-[0.22em] text-zinc-500">
+						<KeyboardKey>Space</KeyboardKey>
+						<span>- Принять матч</span>
 					</div>
 					<button
 						onClick={onAccept}

@@ -29,8 +29,8 @@ export const players: Record<string, PlayerProfile> = {
 	'1': {
 		id: '1',
 		name: 'Taskov1ch',
-		avatarUrl: 'https://i1.sndcdn.com/artworks-8V7ykLCHuVcoFfJB-1Mjf6w-t500x500.png',
-		bannerUrl: 'https://t4.ftcdn.net/jpg/04/04/73/39/360_F_404733910_2mIXr6RbC5G3WZJFjopVsBaR3EOM6Bqy.jpg',
+		avatarUrl: 'https://i.pinimg.com/736x/39/68/41/39684145bebea9850cf5464f283368ac.jpg',
+		bannerUrl: 'https://giffiles.alphacoders.com/221/221617.gif',
 		skinUrl: 'https://mc-heads.net/skin/759dc5ab-6144-46a0-a844-ce66d08d3a8a',
 		status: 'online',
 		rank: {
@@ -38,10 +38,10 @@ export const players: Record<string, PlayerProfile> = {
 			stars: 5,
 		},
 		stats: {
-			favoriteWeapon: 'MCW 6.8',
-			favoriteMode: 'Возрождение',
+			favoriteWeapon: 'Алмазный меч',
+			favoriteMode: 'GAPPLE',
 			kd: '1.87',
-			winRate: '14.2%',
+			winRate: '56.2%',
 		},
 	},
 	'2': {
@@ -56,8 +56,8 @@ export const players: Record<string, PlayerProfile> = {
 			stars: 4,
 		},
 		stats: {
-			favoriteWeapon: 'Honey Badger',
-			favoriteMode: 'Дуэли',
+			favoriteWeapon: 'Железный топор',
+			favoriteMode: 'Crystals FFA',
 			kd: '1.42',
 			winRate: '11.7%',
 		},
@@ -74,8 +74,8 @@ export const players: Record<string, PlayerProfile> = {
 			stars: 2,
 		},
 		stats: {
-			favoriteWeapon: 'BAS-B',
-			favoriteMode: 'Сквад',
+			favoriteWeapon: 'Лук',
+			favoriteMode: 'Гонка вооружений',
 			kd: '1.15',
 			winRate: '8.9%',
 		},
@@ -92,7 +92,7 @@ export const players: Record<string, PlayerProfile> = {
 			stars: 5,
 		},
 		stats: {
-			favoriteWeapon: 'RAM-7',
+			favoriteWeapon: 'Арбалет',
 			favoriteMode: 'Арена 2x2',
 			kd: '2.03',
 			winRate: '19.6%',
@@ -110,8 +110,8 @@ export const players: Record<string, PlayerProfile> = {
 			stars: 5,
 		},
 		stats: {
-			favoriteWeapon: 'KATT-AMR',
-			favoriteMode: 'Контроль точек',
+			favoriteWeapon: 'Золотой меч',
+			favoriteMode: 'Охота за головами',
 			kd: '0.98',
 			winRate: '6.4%',
 		},

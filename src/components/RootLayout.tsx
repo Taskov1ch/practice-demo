@@ -13,6 +13,7 @@ const STATIC_ASSETS: string[] = [
 	'/music/bg_2.mp3',
 	'/sound/matchmaking.mp3',
 	'/sound/back.mp3',
+	'/sound/click.mp3',
 ]
 
 const AUDIO_EXTS = new Set(['mp3', 'wav', 'ogg', 'm4a'])
@@ -92,12 +93,22 @@ const preloadAsset = (url: string) => {
 	return preloadImage(url)
 }
 
+type ClickPulse = {
+	id: number
+	x: number
+	y: number
+}
+
 const RootLayout = () => {
 	const [overlayStage, setOverlayStage] = useState<Stage>('preload')
 	const [progress, setProgress] = useState(0)
 	const [currentAsset, setCurrentAsset] = useState(STATIC_ASSETS[0])
 	const [audio, setAudio] = useState<AudioPack>({})
+	const [clickPulses, setClickPulses] = useState<ClickPulse[]>([])
 	const revealTimeoutRef = useRef<number | null>(null)
+	const clickSoundRef = useRef<Howl | null>(null)
+	const pulseIdRef = useRef(0)
+	const pulseTimeoutsRef = useRef<number[]>([])
 
 	useEffect(() => {
 		let cancelled = false
@@ -147,7 +158,63 @@ const RootLayout = () => {
 		}
 	}, [])
 
+	useEffect(() => {
+		const clickSound = new Howl({ src: ['/sound/click.mp3'], volume: 0.72, preload: true })
+		clickSoundRef.current = clickSound
+
+		const handlePointerDown = (event: PointerEvent) => {
+			if (event.pointerType === 'mouse' && event.button !== 0) return
+			clickSoundRef.current?.play()
+
+			const id = pulseIdRef.current + 1
+			pulseIdRef.current = id
+			setClickPulses((prev) => [...prev, { id, x: event.clientX, y: event.clientY }])
+
+			const timeoutId = window.setTimeout(() => {
+				setClickPulses((prev) => prev.filter((pulse) => pulse.id !== id))
+				pulseTimeoutsRef.current = pulseTimeoutsRef.current.filter((value) => value !== timeoutId)
+			}, 430)
+			pulseTimeoutsRef.current.push(timeoutId)
+		}
+
+		window.addEventListener('pointerdown', handlePointerDown, { passive: true })
+
+		return () => {
+			window.removeEventListener('pointerdown', handlePointerDown)
+			pulseTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
+			pulseTimeoutsRef.current = []
+			clickSoundRef.current?.unload()
+			clickSoundRef.current = null
+		}
+	}, [])
+
+	const requestFullscreen = async () => {
+		if (document.fullscreenElement) return
+		const root = document.documentElement as HTMLElement & {
+			webkitRequestFullscreen?: () => Promise<void> | void
+			msRequestFullscreen?: () => Promise<void> | void
+		}
+
+		try {
+			if (root.requestFullscreen) {
+				await root.requestFullscreen()
+				return
+			}
+			if (root.webkitRequestFullscreen) {
+				await root.webkitRequestFullscreen()
+				return
+			}
+			if (root.msRequestFullscreen) {
+				await root.msRequestFullscreen()
+			}
+		} catch {
+			// Ignore blocked fullscreen requests.
+		}
+	}
+
 	const handleEnter = () => {
+		void requestFullscreen()
+
 		const pack: AudioPack = {
 			bg2: new Howl({ src: ['/music/bg_2.mp3'], loop: true, volume: 0.6, preload: true }),
 			bg1: new Howl({ src: ['/music/bg_1.mp3'], loop: false, volume: 0.8, preload: true }),
@@ -177,6 +244,15 @@ const RootLayout = () => {
 						progress={progress}
 						onEnter={handleEnter}
 					/>
+				</div>
+				<div className="pointer-events-none absolute inset-0 z-[60]">
+					{clickPulses.map((pulse) => (
+						<span
+							key={pulse.id}
+							className="click-pulse"
+							style={{ left: `${pulse.x}px`, top: `${pulse.y}px` }}
+						/>
+					))}
 				</div>
 			</div>
 		</AudioContext.Provider>

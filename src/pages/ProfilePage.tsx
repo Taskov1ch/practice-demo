@@ -1,18 +1,69 @@
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { getPlayerById } from '../data/players'
 import { getRankLabel, getRankMeta } from '../data/ranks'
 import SkinViewer from '../components/SkinViewer'
+import KeyboardKey from '../components/KeyboardKey'
 
 const ProfilePage = () => {
+	const navigate = useNavigate()
 	const { id } = useParams<{ id: string }>()
 	const player = getPlayerById(id ?? '')
 	const isOnline = player.status === 'online'
 	const rankMeta = getRankMeta(player.rank.tier)
 	const rankLabel = getRankLabel(player.rank.tier, player.rank.stars)
+	const [isTouchDevice, setIsTouchDevice] = useState(() => window.matchMedia('(pointer: coarse)').matches)
+	const [isDesktopPointer, setIsDesktopPointer] = useState(() => window.matchMedia('(pointer: fine)').matches)
+
+	const goBack = () => {
+		if (window.history.length > 1) {
+			navigate(-1)
+			return
+		}
+		navigate('/')
+	}
+
+	useEffect(() => {
+		const touchQuery = window.matchMedia('(pointer: coarse)')
+		const desktopQuery = window.matchMedia('(pointer: fine)')
+		const updatePointerMode = () => {
+			setIsTouchDevice(touchQuery.matches)
+			setIsDesktopPointer(desktopQuery.matches)
+		}
+
+		updatePointerMode()
+		touchQuery.addEventListener('change', updatePointerMode)
+		desktopQuery.addEventListener('change', updatePointerMode)
+		return () => {
+			touchQuery.removeEventListener('change', updatePointerMode)
+			desktopQuery.removeEventListener('change', updatePointerMode)
+		}
+	}, [])
+
+	useEffect(() => {
+		const handleBackKey = (event: KeyboardEvent) => {
+			if (event.key !== 'ArrowLeft') return
+			event.preventDefault()
+			goBack()
+		}
+
+		window.addEventListener('keydown', handleBackKey)
+		return () => window.removeEventListener('keydown', handleBackKey)
+	}, [])
 
 	return (
 		<main className="relative z-10 flex h-full items-center justify-center">
+			{isTouchDevice && (
+				<button
+					type="button"
+					onClick={goBack}
+					className="fixed left-4 top-4 z-50 border border-emerald-400/55 bg-zinc-950/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-emerald-200 backdrop-blur-sm"
+				>
+					Назад
+				</button>
+			)}
 			<div className="flex w-full max-w-[1520px] items-center justify-between gap-14 px-10">
 				{/* Info card */}
 				<AnimatePresence mode="wait">
@@ -114,6 +165,12 @@ const ProfilePage = () => {
 					</motion.div>
 				</AnimatePresence>
 			</div>
+			{isDesktopPointer && (
+				<div className="pointer-events-none fixed bottom-[3px] right-6 z-20 flex items-center gap-2 text-[0.62rem] uppercase tracking-[0.22em] text-zinc-400/80">
+					<KeyboardKey>←</KeyboardKey>
+					<span>- Назад</span>
+				</div>
+			)}
 		</main>
 	)
 }

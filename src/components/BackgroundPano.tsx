@@ -56,7 +56,7 @@ const BackgroundPano = () => {
 				className="h-full w-full object-cover"
 				src="/video/bg.mp4"
 			/>
-			<div className="absolute inset-0 bg-black/60" />
+			<div className="absolute inset-0 bg-black/35" />
 		</div>
 	)
 }

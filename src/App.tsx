@@ -8,6 +8,7 @@ import AcceptedModal from './components/AcceptedModal'
 import PlayButton from './components/PlayButton'
 import LobbyHudOverlay from './components/LobbyHudOverlay'
 import BattlePassCard from './components/BattlePassCard'
+import KeyboardKey from './components/KeyboardKey'
 import { useAudio } from './contexts/AudioContext'
 
 type MenuStage = 'menu' | 'matchmaking' | 'found' | 'accepted'
@@ -23,6 +24,7 @@ function App() {
 	const foundModalTimeoutRef = useRef<number | null>(null)
 	const bg1ActiveRef = useRef(false)
 	const prevShowFoundModalRef = useRef(false)
+	const [isDesktopPointer, setIsDesktopPointer] = useState(() => window.matchMedia('(pointer: fine)').matches)
 
 	useEffect(() => {
 		if (stage !== 'matchmaking') return
@@ -100,6 +102,14 @@ function App() {
 	}, [stage, audio, showFoundModal])
 
 	useEffect(() => {
+		const pointerQuery = window.matchMedia('(pointer: fine)')
+		const handlePointerMode = () => setIsDesktopPointer(pointerQuery.matches)
+		handlePointerMode()
+		pointerQuery.addEventListener('change', handlePointerMode)
+		return () => pointerQuery.removeEventListener('change', handlePointerMode)
+	}, [])
+
+	useEffect(() => {
 		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 			if (stage === 'matchmaking' || stage === 'found') {
 				e.preventDefault()
@@ -112,12 +122,45 @@ function App() {
 
 		return () => {
 			window.removeEventListener('beforeunload', handleBeforeUnload)
+		}
+	}, [stage])
 
+	useEffect(() => {
+		return () => {
 			if (matchTimeoutRef.current) window.clearTimeout(matchTimeoutRef.current)
 			if (acceptTimeoutRef.current) window.clearTimeout(acceptTimeoutRef.current)
 			if (foundModalTimeoutRef.current) window.clearTimeout(foundModalTimeoutRef.current)
 		}
-	}, [stage])
+	}, [])
+
+	useEffect(() => {
+		const handleHotkeys = (event: KeyboardEvent) => {
+			if (event.repeat) return
+
+			if (event.key === 'ArrowLeft') {
+				if (stage === 'menu') {
+					event.preventDefault()
+					handleFindMatch()
+					return
+				}
+				if (stage === 'matchmaking' || stage === 'found') {
+					event.preventDefault()
+					handleCancel()
+				}
+				return
+			}
+
+			if (event.key === ' ' || event.code === 'Space') {
+				if (stage === 'found' && showFoundModal) {
+					event.preventDefault()
+					handleAccept()
+				}
+			}
+		}
+
+		window.addEventListener('keydown', handleHotkeys)
+		return () => window.removeEventListener('keydown', handleHotkeys)
+	}, [stage, showFoundModal, audio])
 
 	const handleFindMatch = () => {
 		if (stage === 'matchmaking' || stage === 'found') {
@@ -141,19 +184,20 @@ function App() {
 		if (acceptTimeoutRef.current) window.clearTimeout(acceptTimeoutRef.current)
 		acceptTimeoutRef.current = window.setTimeout(() => {
 			setStage('menu')
-		}, 2000)
+		}, 3000)
 	}
 
 	const isMatchmakingActive = stage === 'matchmaking' || stage === 'found'
+	const isMatchmakingOnly = stage === 'matchmaking'
 
 	return (
 		<>
 			{/* HeaderProfile с блокировкой во время матчмейкинга */}
-			<div className={isMatchmakingActive ? 'pointer-events-none opacity-80' : ''}>
+			<div className={isMatchmakingActive ? 'opacity-80' : ''}>
 				<HeaderProfile />
 			</div>
 
-			<main className={`relative z-10 flex h-full items-end justify-center pb-8 ${isMatchmakingActive ? 'pointer-events-none opacity-90' : ''}`}>
+			<main className={`relative flex h-full items-end justify-center pb-8 ${isMatchmakingOnly ? 'z-40 opacity-90' : 'z-10'}`}>
 				<AnimatePresence mode="wait">
 					<motion.div
 						key="menu"
@@ -167,8 +211,30 @@ function App() {
 				</AnimatePresence>
 			</main>
 
+			{isMatchmakingOnly && (
+				<div
+					aria-hidden
+					className="fixed inset-0 z-30"
+				/>
+			)}
+
 			<LobbyHudOverlay />
 			<BattlePassCard />
+			{isDesktopPointer && (
+				<div className="pointer-events-none fixed bottom-[3px] right-6 z-20 flex items-center gap-2 text-[0.62rem] uppercase tracking-[0.22em] text-zinc-400/80">
+					{isMatchmakingActive ? (
+						<>
+							<KeyboardKey>←</KeyboardKey>
+							<span>- Отмена поиска</span>
+						</>
+					) : (
+						<>
+							<KeyboardKey>←</KeyboardKey>
+							<span>- Играть</span>
+						</>
+					)}
+				</div>
+			)}
 			<MatchmakingBar stage={stage} elapsed={elapsed} />
 			<FoundModal open={stage === 'found' && showFoundModal} countdown={countdown} onAccept={handleAccept} />
 			<AcceptedModal open={stage === 'accepted'} />

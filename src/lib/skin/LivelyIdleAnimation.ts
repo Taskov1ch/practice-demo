@@ -5,6 +5,8 @@ type ActionName =
 	| 'look_right_hold'
 	| 'inspect_left_hand'
 	| 'inspect_right_hand'
+	| 'inspect_left_leg'
+	| 'inspect_right_leg'
 	| 'quick_scan'
 	| 'around_scan'
 
@@ -13,6 +15,8 @@ const ACTIONS: ActionName[] = [
 	'look_right_hold',
 	'inspect_left_hand',
 	'inspect_right_hand',
+	'inspect_left_leg',
+	'inspect_right_leg',
 	'quick_scan',
 	'around_scan',
 ]
@@ -83,6 +87,10 @@ export class LivelyIdleAnimation extends PlayerAnimation {
 				return 0.7 + 1.25 + 0.8
 			case 'inspect_right_hand':
 				return 0.7 + 1.25 + 0.8
+			case 'inspect_left_leg':
+				return 0.8 + 1.2 + 0.8
+			case 'inspect_right_leg':
+				return 0.8 + 1.2 + 0.8
 			case 'quick_scan':
 				return 0.45 + 0.55 + 0.45
 			case 'around_scan':
@@ -124,6 +132,8 @@ export class LivelyIdleAnimation extends PlayerAnimation {
 		let lookRight = 0
 		let inspectLeftHand = 0
 		let inspectRightHand = 0
+		let inspectLeftLeg = 0
+		let inspectRightLeg = 0
 		let quickScan = 0
 		let aroundScanY = 0
 
@@ -140,6 +150,12 @@ export class LivelyIdleAnimation extends PlayerAnimation {
 					break
 				case 'inspect_right_hand':
 					inspectRightHand = this.hold01(actionElapsed, 0.7, 1.25, 0.8)
+					break
+				case 'inspect_left_leg':
+					inspectLeftLeg = this.hold01(actionElapsed, 0.8, 1.2, 0.8)
+					break
+				case 'inspect_right_leg':
+					inspectRightLeg = this.hold01(actionElapsed, 0.8, 1.2, 0.8)
 					break
 				case 'quick_scan':
 					quickScan = this.hold01(actionElapsed, 0.45, 0.55, 0.45)
@@ -160,10 +176,14 @@ export class LivelyIdleAnimation extends PlayerAnimation {
 			- lookRight * 0.04
 			+ inspectLeftHand * 0.06
 			- inspectRightHand * 0.06
+			+ inspectLeftLeg * 0.12
+			- inspectRightLeg * 0.12
 			+ quickScan * 0.03
 		skin.body.rotation.x = Math.sin(t * 0.5) * 0.004
 			+ inspectLeftHand * 0.05
 			+ inspectRightHand * 0.05
+			+ inspectLeftLeg * 0.08
+			+ inspectRightLeg * 0.08
 
 		// --- Head: occasional scanning and hand checks ---
 		skin.head.rotation.y = Math.sin(t * 0.2) * 0.035
@@ -171,14 +191,20 @@ export class LivelyIdleAnimation extends PlayerAnimation {
 			- lookRight * 0.52
 			+ inspectLeftHand * 0.2
 			- inspectRightHand * 0.2
+			+ inspectLeftLeg * 0.18
+			- inspectRightLeg * 0.18
 			+ quickScan * 0.35
 			+ aroundScanY
 		skin.head.rotation.x = Math.sin(t * 0.35) * 0.02
 			+ inspectLeftHand * 0.33
 			+ inspectRightHand * 0.33
+			+ inspectLeftLeg * 0.26
+			+ inspectRightLeg * 0.26
 		skin.head.rotation.z = Math.sin(t * 0.6) * 0.01
 			+ lookLeft * 0.03
 			- lookRight * 0.03
+			- inspectLeftLeg * 0.16
+			+ inspectRightLeg * 0.16
 
 		// --- Arms: natural asymmetric sway ---
 		const armBaseZ = Math.PI * 0.02
@@ -187,28 +213,42 @@ export class LivelyIdleAnimation extends PlayerAnimation {
 			- Math.cos(t * 1.8) * 0.035
 			- Math.sin(t * 0.6) * 0.015
 			- inspectRightHand * 0.2
+			+ inspectLeftLeg * 0.06
+			- inspectRightLeg * 0.03
 		skin.rightArm.rotation.x = Math.sin(t * 0.9) * 0.04
 			- inspectRightHand * 0.95
 			- inspectLeftHand * 0.1
+			+ inspectLeftLeg * 0.1
+			+ inspectRightLeg * 0.22
 
 		// Left arm: slightly different phase for asymmetry
 		skin.leftArm.rotation.z = armBaseZ
 			+ Math.cos(t * 1.8 + 0.8) * 0.035
 			+ Math.sin(t * 0.6 + 1.2) * 0.015
 			+ inspectLeftHand * 0.2
+			+ inspectRightLeg * 0.06
+			- inspectLeftLeg * 0.03
 		skin.leftArm.rotation.x = Math.sin(t * 0.9 + 2.0) * 0.04
 			- inspectLeftHand * 0.95
 			- inspectRightHand * 0.1
+			+ inspectRightLeg * 0.1
+			+ inspectLeftLeg * 0.22
 
 		// --- Weight shift on legs ---
 		const shift = Math.sin(t * 0.45) * 0.012
 			+ inspectLeftHand * 0.01
 			- inspectRightHand * 0.01
+			+ inspectLeftLeg * 0.02
+			- inspectRightLeg * 0.02
 		skin.leftLeg.rotation.z = shift
 		skin.rightLeg.rotation.z = -shift
 		// Subtle knee bend that follows breathing
 		skin.leftLeg.rotation.x = Math.sin(t * 1.8 + 0.3) * 0.015
+			- inspectLeftLeg * 0.36
+			+ inspectRightLeg * 0.11
 		skin.rightLeg.rotation.x = Math.sin(t * 1.8 + Math.PI + 0.3) * 0.015
+			- inspectRightLeg * 0.36
+			+ inspectLeftLeg * 0.11
 
 		// --- Cape: gentle breeze ---
 		const capeBase = Math.PI * 0.06
