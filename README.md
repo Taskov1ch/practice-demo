@@ -2,7 +2,7 @@
 
 ## GitHub Pages (gh-pages)
 
-1. Убедитесь, что репозиторий называется `practice` (или замените `base` в `vite.config.ts` под ваше имя репозитория).
+1. Репозиторий: `practice-demo`, production `base`: `/practice-demo/`.
 2. Запустите деплой:
 
 ```bash
@@ -10,6 +10,7 @@ npm run deploy
 ```
 
 3. В GitHub откройте `Settings -> Pages` и выберите источник `gh-pages` branch.
+4. Публичный URL: `https://taskov1ch.xyz/practice-demo`.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
