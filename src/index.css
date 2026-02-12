@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Share+Tech+Mono&display=swap");
 
 :root {
 	color-scheme: dark;
@@ -14,12 +13,6 @@ body {
 	min-height: 100vh;
 	background: transparent;
 	color: #e5e7eb;
-	font-family: "Inter", system-ui, -apple-system, sans-serif;
-}
-
-.font-mono {
-	font-family: "Share Tech Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-		"Liberation Mono", "Courier New", monospace;
 }
 
 .loader {

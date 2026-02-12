@@ -25,6 +25,8 @@ function App() {
 	useEffect(() => {
 		if (stage !== 'matchmaking') return
 		const timeout = window.setTimeout(() => {
+			setShowFoundModal(false)
+			setCountdown(10)
 			setStage('found')
 		}, 3000 + Math.random() * 3000)
 		matchTimeoutRef.current = timeout
@@ -37,7 +39,6 @@ function App() {
 
 	useEffect(() => {
 		if (stage !== 'matchmaking') return
-		setElapsed(0)
 		const timer = window.setInterval(() => {
 			setElapsed((prev) => prev + 1)
 		}, 1000)
@@ -46,12 +47,10 @@ function App() {
 
 	useEffect(() => {
 		if (stage !== 'found') return
-		setShowFoundModal(false)
 		const modalTimeout = window.setTimeout(() => {
 			setShowFoundModal(true)
 		}, 1500)
 		foundModalTimeoutRef.current = modalTimeout
-		setCountdown(10)
 		const timer = window.setInterval(() => {
 			setCountdown((prev) => {
 				if (prev <= 1) {
@@ -98,19 +97,35 @@ function App() {
 		}
 	}, [stage, audio, showFoundModal])
 
+	// Обработка закрытия/перезагрузки страницы во время матчмейкинга
 	useEffect(() => {
+		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+			if (stage === 'matchmaking' || stage === 'found') {
+				e.preventDefault()
+				e.returnValue = 'Идет поиск матча. Вы уверены, что хотите покинуть страницу?'
+				return 'Идет поиск матча. Вы уверены, что хотите покинуть страницу?'
+			}
+		}
+
+		window.addEventListener('beforeunload', handleBeforeUnload)
+
 		return () => {
+			window.removeEventListener('beforeunload', handleBeforeUnload)
+
 			if (matchTimeoutRef.current) window.clearTimeout(matchTimeoutRef.current)
 			if (acceptTimeoutRef.current) window.clearTimeout(acceptTimeoutRef.current)
 			if (foundModalTimeoutRef.current) window.clearTimeout(foundModalTimeoutRef.current)
 		}
-	}, [])
+	}, [stage])
 
 	const handleFindMatch = () => {
 		if (stage === 'matchmaking' || stage === 'found') {
 			handleCancel()
 			return
 		}
+		setElapsed(0)
+		setCountdown(10)
+		setShowFoundModal(false)
 		setStage('matchmaking')
 		audio.match?.play()
 	}
@@ -128,11 +143,16 @@ function App() {
 		}, 2000)
 	}
 
+	const isMatchmakingActive = stage === 'matchmaking' || stage === 'found'
+
 	return (
 		<>
-			<HeaderProfile />
+			{/* HeaderProfile с блокировкой во время матчмейкинга */}
+			<div className={isMatchmakingActive ? 'pointer-events-none opacity-80' : ''}>
+				<HeaderProfile />
+			</div>
 
-			<main className="relative z-10 flex min-h-screen items-center justify-center">
+			<main className={`relative z-10 flex min-h-screen items-end justify-center pb-4 md:pb-8 ${isMatchmakingActive ? 'pointer-events-none opacity-90' : ''}`}>
 				<AnimatePresence mode="wait">
 					<motion.div
 						key="menu"
@@ -141,12 +161,12 @@ function App() {
 						exit={{ opacity: 0 }}
 						className="flex items-center justify-center"
 					>
-						<SkinViewer />
+						<SkinViewer variant="lobby" />
 					</motion.div>
 				</AnimatePresence>
 			</main>
 
-			<MatchmakingBar stage={stage} elapsed={elapsed} onCancel={handleCancel} />
+			<MatchmakingBar stage={stage} elapsed={elapsed} />
 			<FoundModal open={stage === 'found' && showFoundModal} countdown={countdown} onAccept={handleAccept} />
 			<AcceptedModal open={stage === 'accepted'} />
 			<PlayButton stage={stage} onFindMatch={handleFindMatch} />

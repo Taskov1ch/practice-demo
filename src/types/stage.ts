@@ -1,1 +1,1 @@
-export type Stage = 'preload' | 'enter' | 'menu' | 'matchmaking' | 'found' | 'accepted'
+export type Stage = 'preload' | 'enter' | 'reveal' | 'menu' | 'matchmaking' | 'found' | 'accepted'

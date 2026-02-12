@@ -28,7 +28,7 @@ const AcceptedModal = ({ open }: AcceptedModalProps) => (
 						Участие подтверждено
 					</h3>
 					<p className="mt-2 text-xs uppercase tracking-[0.3em] text-zinc-500">
-						Синхронизация канала...
+						Подключение к матчу...
 					</p>
 				</motion.div>
 			</motion.div>

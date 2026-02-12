@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Howl } from 'howler'
 import BackgroundPano from './BackgroundPano'
@@ -22,6 +22,7 @@ const RootLayout = () => {
 	const [progress, setProgress] = useState(0)
 	const [currentAsset, setCurrentAsset] = useState(ASSETS[0])
 	const [audio, setAudio] = useState<AudioPack>({})
+	const revealTimeoutRef = useRef<number | null>(null)
 
 	useEffect(() => {
 		let cancelled = false
@@ -50,6 +51,14 @@ const RootLayout = () => {
 		}
 	}, [audio])
 
+	useEffect(() => {
+		return () => {
+			if (revealTimeoutRef.current) {
+				window.clearTimeout(revealTimeoutRef.current)
+			}
+		}
+	}, [])
+
 	const handleEnter = () => {
 		const pack: AudioPack = {
 			bg2: new Howl({ src: ['/music/bg_2.mp3'], loop: true, volume: 0.6, preload: true }),
@@ -59,14 +68,20 @@ const RootLayout = () => {
 		}
 		pack.bg2?.play()
 		setAudio(pack)
-		setOverlayStage('menu')
+		setOverlayStage('reveal')
+		if (revealTimeoutRef.current) {
+			window.clearTimeout(revealTimeoutRef.current)
+		}
+		revealTimeoutRef.current = window.setTimeout(() => setOverlayStage('menu'), 900)
 	}
 
 	return (
 		<AudioContext.Provider value={audio}>
 			<div className="relative min-h-screen overflow-hidden text-zinc-100">
 				<BackgroundPano />
-				<Outlet />
+				<div className={`transition-opacity duration-900 ease-out ${overlayStage === 'preload' || overlayStage === 'enter' ? 'opacity-0' : 'opacity-100'}`}>
+					<Outlet />
+				</div>
 				<PreloadEnterOverlay
 					stage={overlayStage}
 					currentAsset={currentAsset}
