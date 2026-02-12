@@ -6,6 +6,8 @@ import MatchmakingBar from './components/MatchmakingBar'
 import FoundModal from './components/FoundModal'
 import AcceptedModal from './components/AcceptedModal'
 import PlayButton from './components/PlayButton'
+import LobbyHudOverlay from './components/LobbyHudOverlay'
+import BattlePassCard from './components/BattlePassCard'
 import { useAudio } from './contexts/AudioContext'
 
 type MenuStage = 'menu' | 'matchmaking' | 'found' | 'accepted'
@@ -97,7 +99,6 @@ function App() {
 		}
 	}, [stage, audio, showFoundModal])
 
-	// Обработка закрытия/перезагрузки страницы во время матчмейкинга
 	useEffect(() => {
 		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 			if (stage === 'matchmaking' || stage === 'found') {
@@ -152,7 +153,7 @@ function App() {
 				<HeaderProfile />
 			</div>
 
-			<main className={`relative z-10 flex min-h-screen items-end justify-center pb-4 md:pb-8 ${isMatchmakingActive ? 'pointer-events-none opacity-90' : ''}`}>
+			<main className={`relative z-10 flex h-full items-end justify-center pb-8 ${isMatchmakingActive ? 'pointer-events-none opacity-90' : ''}`}>
 				<AnimatePresence mode="wait">
 					<motion.div
 						key="menu"
@@ -166,6 +167,8 @@ function App() {
 				</AnimatePresence>
 			</main>
 
+			<LobbyHudOverlay />
+			<BattlePassCard />
 			<MatchmakingBar stage={stage} elapsed={elapsed} />
 			<FoundModal open={stage === 'found' && showFoundModal} countdown={countdown} onAccept={handleAccept} />
 			<AcceptedModal open={stage === 'accepted'} />

@@ -26,13 +26,13 @@ const PreloadEnterOverlay = ({ stage, currentAsset, progress, onEnter }: Preload
 					transition={{ duration: 0.85, ease: 'easeInOut' }}
 				/>
 				<motion.div
-					className="pointer-events-none absolute left-0 right-0 top-0 z-10 h-[28vh] bg-linear-to-b from-black via-black/95 to-transparent"
+					className="pointer-events-none absolute left-0 right-0 top-0 z-10 h-[300px] bg-linear-to-b from-black via-black/95 to-transparent"
 					initial={false}
 					animate={{ y: stage === 'reveal' ? '-110%' : '0%' }}
 					transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
 				/>
 				<motion.div
-					className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 h-[32vh] bg-linear-to-t from-black via-black/95 to-transparent"
+					className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 h-[346px] bg-linear-to-t from-black via-black/95 to-transparent"
 					initial={false}
 					animate={{ y: stage === 'reveal' ? '110%' : '0%' }}
 					transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
@@ -70,7 +70,7 @@ const PreloadEnterOverlay = ({ stage, currentAsset, progress, onEnter }: Preload
 						>
 							<div>
 								<h1 className="text-2xl font-semibold uppercase tracking-[0.3em] text-zinc-100">
-									Bedrock PvP Lobby
+									Лобби Bedrock PvP
 								</h1>
 								<p className="mt-2 text-xs uppercase tracking-[0.3em] text-zinc-500">
 									Сервер готов // Подключение установлено
@@ -79,6 +79,7 @@ const PreloadEnterOverlay = ({ stage, currentAsset, progress, onEnter }: Preload
 							<button
 								onClick={onEnter}
 								disabled={stage === 'reveal'}
+								data-testid="enter-lobby-button"
 								className="shrink-0 border border-emerald-400/70 bg-emerald-500/10 px-10 py-3.5 text-sm uppercase tracking-[0.4em] text-emerald-300 transition hover:bg-emerald-400/20"
 							>
 								Войти

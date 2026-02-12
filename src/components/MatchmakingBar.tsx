@@ -12,7 +12,7 @@ const MatchmakingBar = ({ stage, elapsed }: MatchmakingBarProps) => (
 		{(stage === 'matchmaking' || stage === 'found') && (
 			<motion.div
 				initial={{ width: 110, height: 2, opacity: 0, y: -14 }}
-				animate={{ width: '100vw', height: 36, opacity: 1, y: 0 }}
+				animate={{ width: '100%', height: 36, opacity: 1, y: 0 }}
 				exit={{ width: 110, height: 2, opacity: 0, y: -14 }}
 				transition={{ duration: 0.4, ease: 'easeOut' }}
 				className={`fixed left-1/2 top-0 z-30 flex -translate-x-1/2 items-center justify-center overflow-hidden border-b backdrop-blur-sm ${stage === 'found'

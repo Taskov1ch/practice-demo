@@ -8,11 +8,54 @@
 	box-sizing: border-box;
 }
 
+@font-face {
+	font-family: 'MC Regular';
+	src: url('/fonts/mc_regular.ttf') format('truetype');
+}
+
+@font-face {
+	font-family: 'MC Title';
+	src: url('/fonts/mc_title.ttf') format('truetype');
+}
+
+html {
+	height: 100%;
+	font-family: 'MC Regular', sans-serif;
+}
+
+.title {
+	font-family: 'MC Title', sans-serif;
+}
+
 body {
 	margin: 0;
-	min-height: 100vh;
+	height: 100%;
 	background: transparent;
 	color: #e5e7eb;
+	overflow: hidden;
+}
+
+#root {
+	height: 100%;
+}
+
+.desktop-shell {
+	position: fixed;
+	inset: 0;
+	overflow: hidden;
+	background: radial-gradient(circle at top, #0f172a 0%, #020617 58%, #000 100%);
+}
+
+.desktop-ui-layer {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: 1360px;
+	height: 760px;
+	overflow: hidden;
+	transform: translate(-50%, -50%) scale(var(--ui-scale, 1));
+	transform-origin: center center;
+	isolation: isolate;
 }
 
 .loader {
@@ -47,6 +90,15 @@ body {
 	color: #34d399;
 	transform: rotateY(70deg);
 	animation-delay: .4s;
+}
+
+.no-scrollbar {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+	display: none;
 }
 
 @keyframes loader-spin-shadow {

@@ -24,22 +24,40 @@ const SkinViewer = ({ skinUrl, variant = 'lobby' }: SkinViewerProps) => {
 			width: container.clientWidth,
 			height: container.clientHeight,
 			skin: resolvedSkinUrl,
+			pixelRatio: 'match-device',
 		})
+
+		const applyFraming = () => {
+			const width = Math.max(container.clientWidth, 1)
+			const height = Math.max(container.clientHeight, 1)
+			const aspect = width / height
+
+			viewer.fov = 40
+			if (isLobbyVariant) {
+				const narrow = aspect < 0.62
+				viewer.zoom = narrow ? 0.78 : 0.86
+				viewer.playerWrapper.position.y = narrow ? -1.25 : -1.38
+				viewer.globalLight.intensity = 1.55
+				viewer.cameraLight.intensity = 0.95
+				viewer.renderer.toneMappingExposure = 1.2
+			} else {
+				const narrow = aspect < 0.72
+				viewer.zoom = narrow ? 0.82 : 0.88
+				viewer.playerWrapper.position.y = narrow ? -0.04 : 0.08
+				viewer.globalLight.intensity = 1.2
+				viewer.cameraLight.intensity = 0.6
+				viewer.renderer.toneMappingExposure = 1
+			}
+			viewer.adjustCameraDistance()
+		}
 
 		viewer.autoRotate = false
 		viewer.animation = isProfileVariant ? new ProfileIdleAnimation() : new LivelyIdleAnimation()
 		viewer.controls.enableRotate = false
 		viewer.controls.enableZoom = false
 		viewer.controls.enablePan = false
-		viewer.fov = isLobbyVariant ? 40 : 40
-		viewer.zoom = isLobbyVariant ? 1.1 : 1
-		viewer.globalLight.intensity = isLobbyVariant ? 1.55 : 1.2
-		viewer.cameraLight.intensity = isLobbyVariant ? 0.95 : 0.6
-		viewer.renderer.toneMappingExposure = isLobbyVariant ? 1.2 : 1
 		viewer.background = null
-		viewer.playerWrapper.position.y = isLobbyVariant ? -1.55 : 0
 
-		// Append the auto-created canvas to the container
 		viewer.canvas.style.width = '100%'
 		viewer.canvas.style.height = '100%'
 		viewer.canvas.style.cursor = 'grab'
@@ -49,6 +67,7 @@ const SkinViewer = ({ skinUrl, variant = 'lobby' }: SkinViewerProps) => {
 		skinViewerRef.current = viewer
 		const root = viewer.playerObject as unknown as { rotation: { x: number; y: number } }
 		root.rotation.y = isProfileVariant ? (-20 * Math.PI) / 180 : 0
+		applyFraming()
 
 		let isDragging = false
 		let dragStartX = 0
@@ -67,8 +86,7 @@ const SkinViewer = ({ skinUrl, variant = 'lobby' }: SkinViewerProps) => {
 		const handlePointerMove = (event: PointerEvent) => {
 			if (!isDragging) return
 			const deltaX = event.clientX - dragStartX
-			const nextY = dragStartRotY + deltaX * pointerSpeed
-			root.rotation.y = nextY
+			root.rotation.y = dragStartRotY + deltaX * pointerSpeed
 		}
 
 		const stopDragging = () => {
@@ -82,11 +100,13 @@ const SkinViewer = ({ skinUrl, variant = 'lobby' }: SkinViewerProps) => {
 		viewer.canvas.addEventListener('pointercancel', stopDragging)
 
 		const handleResize = () => {
-			if (skinViewerRef.current && container) {
-				skinViewerRef.current.width = container.clientWidth
-				skinViewerRef.current.height = container.clientHeight
-			}
+			if (!skinViewerRef.current) return
+			skinViewerRef.current.setSize(container.clientWidth, container.clientHeight)
+			applyFraming()
 		}
+
+		const resizeObserver = new ResizeObserver(handleResize)
+		resizeObserver.observe(container)
 		window.addEventListener('resize', handleResize)
 
 		return () => {
@@ -94,6 +114,7 @@ const SkinViewer = ({ skinUrl, variant = 'lobby' }: SkinViewerProps) => {
 			viewer.canvas.removeEventListener('pointermove', handlePointerMove)
 			viewer.canvas.removeEventListener('pointerup', stopDragging)
 			viewer.canvas.removeEventListener('pointercancel', stopDragging)
+			resizeObserver.disconnect()
 			window.removeEventListener('resize', handleResize)
 			if (skinViewerRef.current) {
 				skinViewerRef.current.dispose()
@@ -107,8 +128,8 @@ const SkinViewer = ({ skinUrl, variant = 'lobby' }: SkinViewerProps) => {
 		<div
 			ref={skinContainerRef}
 			className={isLobbyVariant
-				? 'h-[92vh] w-[34rem] max-w-[96vw] translate-y-16 md:translate-y-20'
-				: 'h-[82vh] w-[40rem] max-w-[96vw]'}
+				? 'h-[780px] w-[460px] translate-y-12'
+				: 'h-[760px] w-[520px]'}
 		/>
 	)
 }

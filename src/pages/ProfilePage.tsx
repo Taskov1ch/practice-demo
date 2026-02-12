@@ -1,15 +1,19 @@
 import { useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { getPlayerById } from '../data/players'
+import { getRankLabel, getRankMeta } from '../data/ranks'
 import SkinViewer from '../components/SkinViewer'
 
 const ProfilePage = () => {
 	const { id } = useParams<{ id: string }>()
 	const player = getPlayerById(id ?? '')
+	const isOnline = player.status === 'online'
+	const rankMeta = getRankMeta(player.rank.tier)
+	const rankLabel = getRankLabel(player.rank.tier, player.rank.stars)
 
 	return (
-		<main className="relative z-10 flex min-h-screen items-center justify-center">
-			<div className="flex w-full max-w-[1520px] items-center justify-between gap-8 px-6 lg:gap-14 lg:px-10">
+		<main className="relative z-10 flex h-full items-center justify-center">
+			<div className="flex w-full max-w-[1520px] items-center justify-between gap-14 px-10">
 				{/* Info card */}
 				<AnimatePresence mode="wait">
 					<motion.div
@@ -18,27 +22,35 @@ const ProfilePage = () => {
 						animate={{ opacity: 1, x: 0 }}
 						exit={{ opacity: 0 }}
 						transition={{ duration: 0.5, delay: 0.1 }}
-						className="w-[30rem] shrink-0 translate-x-3 md:translate-x-8"
+						className="w-[30rem] shrink-0 translate-x-8"
 					>
 						<div className="border border-emerald-400/40 bg-zinc-950/70 backdrop-blur-md">
 							{/* Banner */}
 							<div className="relative h-36 w-full overflow-hidden">
-								<img
-									alt="Баннер"
-									src={player.bannerUrl}
-									className="h-full w-full object-cover"
-								/>
+								{player.bannerUrl && (
+									<img
+										alt="Баннер"
+										src={player.bannerUrl}
+										className="h-full w-full object-cover"
+									/>
+								)}
 								<div className="absolute inset-0 bg-linear-to-t from-zinc-950/90 to-transparent" />
 							</div>
 
 							{/* Avatar + name */}
 							<div className="-mt-10 px-6 pb-6">
 								<div className="relative mb-4 h-20 w-20 border-2 border-emerald-400/60 bg-zinc-950">
-									<img
-										alt="Аватар"
-										src={player.avatarUrl}
-										className="h-full w-full object-cover"
-									/>
+									{player.avatarUrl ? (
+										<img
+											alt="Аватар"
+											src={player.avatarUrl}
+											className="h-full w-full object-cover"
+										/>
+									) : (
+										<div className="flex h-full w-full items-center justify-center text-3xl font-semibold uppercase tracking-[0.08em] text-zinc-200">
+											{player.name.charAt(0)}
+										</div>
+									)}
 								</div>
 
 								<h1 className="text-xl font-semibold uppercase tracking-[0.25em] text-zinc-100">
@@ -48,32 +60,34 @@ const ProfilePage = () => {
 								<div className="mt-3 h-px w-full bg-emerald-400/20" />
 
 								<div className="mt-4 grid grid-cols-2 gap-3">
-									<div className="border border-emerald-400/20 bg-zinc-900/50 p-3">
+									<div className="col-span-2 border border-emerald-400/20 bg-zinc-900/50 px-3 py-2.5">
 										<p className="text-[0.6rem] uppercase tracking-[0.28em] text-zinc-500">Ранг</p>
-										<p className="mt-2 text-sm text-zinc-200">Престиж V // 142</p>
+										<p className={`mt-1 truncate whitespace-nowrap text-[0.68rem] font-semibold uppercase tracking-[0.16em] ${rankMeta.nameClass}`}>
+											{rankLabel}
+										</p>
 									</div>
 									<div className="border border-emerald-400/20 bg-zinc-900/50 p-3">
 										<p className="text-[0.6rem] uppercase tracking-[0.28em] text-zinc-500">Статус</p>
-										<p className="mt-2 flex items-center gap-1.5 text-sm text-emerald-400">
-											<span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-											Онлайн
+										<p className={`mt-2 flex items-center gap-1.5 text-sm ${isOnline ? 'text-emerald-400' : 'text-zinc-400'}`}>
+											<span className={`inline-block h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-zinc-500'}`} />
+											{isOnline ? 'Онлайн' : 'Не в сети'}
 										</p>
 									</div>
 									<div className="border border-emerald-400/20 bg-zinc-900/50 p-3">
 										<p className="text-[0.6rem] uppercase tracking-[0.28em] text-zinc-500">Любимое оружие</p>
-										<p className="mt-2 text-sm text-zinc-200">MCW 6.8</p>
+										<p className="mt-2 text-sm text-zinc-200">{player.stats.favoriteWeapon}</p>
 									</div>
 									<div className="border border-emerald-400/20 bg-zinc-900/50 p-3">
 										<p className="text-[0.6rem] uppercase tracking-[0.28em] text-zinc-500">Любимый режим</p>
-										<p className="mt-2 text-sm text-zinc-200">Resurgence</p>
+										<p className="mt-2 text-sm text-zinc-200">{player.stats.favoriteMode}</p>
 									</div>
 									<div className="border border-emerald-400/20 bg-zinc-900/50 p-3">
 										<p className="text-[0.6rem] uppercase tracking-[0.28em] text-zinc-500">K/D</p>
-										<p className="mt-2 text-sm text-zinc-200">1.87</p>
+										<p className="mt-2 text-sm text-zinc-200">{player.stats.kd}</p>
 									</div>
 									<div className="border border-emerald-400/20 bg-zinc-900/50 p-3">
-										<p className="text-[0.6rem] uppercase tracking-[0.28em] text-zinc-500">Win Rate</p>
-										<p className="mt-2 text-sm text-zinc-200">14.2%</p>
+										<p className="text-[0.6rem] uppercase tracking-[0.28em] text-zinc-500">Винрейт</p>
+										<p className="mt-2 text-sm text-zinc-200">{player.stats.winRate}</p>
 									</div>
 								</div>
 
